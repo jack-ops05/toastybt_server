@@ -5,8 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import databento as db
 import pandas as pd
-
-from misc.alerts import send_alert
+from alerts import send_alert
 
 logger = logging.getLogger("sync")
 
