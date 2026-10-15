@@ -116,3 +116,6 @@ def sync_symbols():
         logger.info(f"Sync complete for {symbol}, {rows_added} rows added")
 
     send_alert("Daily data sync complete")
+
+if __name__ == "__main__":
+    sync_symbols()

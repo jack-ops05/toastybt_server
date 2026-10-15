@@ -27,7 +27,7 @@ def handler(symbol: str, start: str, end: str):
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail="Start and end dates must be ISO format -> [ 2012-01-01T00:00:00 ]"
+            detail="Start and end dates must be ISO format tz-aware -> [ 2012-01-01T00:00:00+00:00 ]"
         )
 
     if start_dt >= end_dt:
