@@ -43,14 +43,12 @@ def sync_symbols():
         dataset = metadata["dataset"]
         schema = metadata["schema"]
         start = datetime.fromisoformat(metadata["max_timestamp"]) + timedelta(minutes=1)
-        end = datetime.now(UTC)
 
         #Download data
         try:
             data = client.timeseries.get_range(
                 dataset=dataset,
                 start=start,
-                end=end,
                 symbols=databento_symbol,
                 schema=schema,
                 stype_in="continuous"
