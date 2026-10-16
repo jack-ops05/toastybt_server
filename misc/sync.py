@@ -6,8 +6,11 @@ from datetime import UTC, datetime, timedelta
 import databento as db
 import pandas as pd
 from alerts import send_alert
+from dotenv import load_dotenv
 
 logger = logging.getLogger("sync")
+
+load_dotenv()
 
 def sync_symbols():
 
