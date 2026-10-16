@@ -28,7 +28,7 @@ def sync_symbols():
             base_dir,
             "metadata.json"
         )
-        
+    
         if not os.path.exists(metadata_path):
             logger.error(f"Failed to sync {symbol} could not find metadata")
             send_alert(f"Failed to sync {symbol}, could not find metadata")
@@ -44,11 +44,20 @@ def sync_symbols():
         schema = metadata["schema"]
         start = datetime.fromisoformat(metadata["max_timestamp"]) + timedelta(minutes=1)
 
+        #Get latest available data
+        try:
+            dataset_range = client.metadata.get_dataset_range(dataset)
+            end = (pd.Timestamp(dataset_range["end"]).tz_convert(None).to_pydatetime().isoformat())
+        except Exception:
+            logger.exception(f"Failed to get latest available data for {symbol}, Databento API error")
+            continue
+
         #Download data
         try:
             data = client.timeseries.get_range(
                 dataset=dataset,
                 start=start,
+                end=end,
                 symbols=databento_symbol,
                 schema=schema,
                 stype_in="continuous"
