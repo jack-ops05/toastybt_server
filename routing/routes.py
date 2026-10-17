@@ -1,33 +1,35 @@
-import logging
-
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from handlers import get_data, get_metadata, post_data
-from routing.request_bodies import GetDataRequest, PostDataRequest
-
-logger = logging.getLogger("routing")
+from handlers import download_data, get_data, get_metadata, sync_data
+from routing.request_bodies import DownloadDataRequest, GetDataRequest
 
 router = APIRouter()
 
-@router.post("/post_data")
-def post_data_route(request: PostDataRequest):
-    logger.info(f"Post data request recieved for symbol {request.server_symbol}")
-    return post_data.handler(
+@router.post("/download_data")
+def download_data_route(request: DownloadDataRequest):
+    return download_data.handler(
+        request.server_symbol,
         request.dataset,
         request.start,
         request.end,
         request.databento_symbol,
         request.db_schema,
-        request.server_symbol
     )
 
 @router.get("/get_data")
 def get_data_route(request: GetDataRequest):
-    logger.info(f"Get data request recieved for symbol {request.symbol}")
-    return StreamingResponse(get_data.handler(request.symbol, request.start, request.end), media_type="application/x-ndjson")
+    return StreamingResponse(
+        get_data.handler(
+            request.symbol,
+            request.start,
+            request.end
+        ), media_type="application/x-ndjson")
 
 @router.get("/get_metadata")
 def get_metadata_route():
-    logger.info("Get metadata request recieved")
     return get_metadata.handler()
+
+@router.post("/sync_data")
+def sync_data_route():
+    return sync_data.handler()

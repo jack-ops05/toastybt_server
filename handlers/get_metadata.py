@@ -1,12 +1,11 @@
 import json
-import logging
 import os
-
-logger = logging.getLogger("handlers")
 
 def handler():
 
     full_metadata = {}
+
+    #Find each available symbols metadata
     for symbol in os.listdir("./market_data"):
 
         metadata_file = os.path.join(
@@ -17,7 +16,6 @@ def handler():
         )
 
         if not os.path.exists(metadata_file):
-            logger.warning(f"Symbol {symbol} is missing metadata")
             continue
 
         with open(metadata_file, "r") as file:

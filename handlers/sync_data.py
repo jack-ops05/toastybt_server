@@ -1,37 +1,28 @@
 import json
-import logging
 import os
 from datetime import UTC, datetime, timedelta
 
 import databento as db
 import pandas as pd
-from alerts import send_alert
-from dotenv import load_dotenv
 
-logger = logging.getLogger("sync")
-
-load_dotenv()
-
-def sync_symbols():
+def handler():
 
     client = db.Historical(os.getenv("DATABENTO_API_KEY"))
     
     #Iterate for each symbol
     for symbol in os.listdir("./market_data"):
 
-        base_dir = os.path.join(
+        symbol_dir = os.path.join(
             "market_data",
             symbol,
             "1m"
         )
         metadata_path = os.path.join(
-            base_dir,
+            symbol_dir,
             "metadata.json"
         )
-    
+
         if not os.path.exists(metadata_path):
-            logger.error(f"Failed to sync {symbol} could not find metadata")
-            send_alert(f"Failed to sync {symbol}, could not find metadata")
             continue
 
         #Load metadata
@@ -47,9 +38,10 @@ def sync_symbols():
         #Get latest available data
         try:
             dataset_range = client.metadata.get_dataset_range(dataset)
-            end = (pd.Timestamp(dataset_range["end"]).tz_convert(None).to_pydatetime().isoformat())
-        except Exception:
-            logger.exception(f"Failed to get latest available data for {symbol}, Databento API error")
+            end = datetime.fromisoformat(dataset_range["end"])
+            end = end.replace(microsecond=0, second=0) - timedelta(minutes=1)
+        except Exception as e:
+            print(e)
             continue
 
         #Download data
@@ -62,9 +54,8 @@ def sync_symbols():
                 schema=schema,
                 stype_in="continuous"
             )
-        except Exception:
-            logger.exception(f"Failed to sync {symbol} Databento API error")
-            send_alert(f"Failed to sync {symbol}, Databento API error")
+        except Exception as e:
+            print(e)
             continue
 
         #Reframe new data
@@ -91,7 +82,7 @@ def sync_symbols():
             month = key[1]
 
             year_dir = os.path.join(
-                base_dir,
+                symbol_dir,
                 str(year)
             )
             os.makedirs(year_dir, exist_ok=True)
@@ -121,10 +112,3 @@ def sync_symbols():
 
         with open(metadata_path, "w") as file:
             json.dump(metadata, file, indent=4)
-
-        logger.info(f"Sync complete for {symbol}, {rows_added} rows added")
-
-    send_alert("Daily data sync complete")
-
-if __name__ == "__main__":
-    sync_symbols()

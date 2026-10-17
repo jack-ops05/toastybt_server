@@ -5,8 +5,6 @@ from datetime import datetime
 import pandas as pd
 from fastapi import HTTPException
 
-
-#Validation function
 def handler(symbol: str, start: str, end: str):
 
     symbol_dir = os.path.join(
@@ -24,6 +22,7 @@ def handler(symbol: str, start: str, end: str):
     try:
         start_dt = datetime.fromisoformat(start)
         end_dt = datetime.fromisoformat(end)
+
     except ValueError:
         raise HTTPException(
             status_code=400,
