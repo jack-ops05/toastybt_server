@@ -4,10 +4,14 @@ from datetime import UTC, datetime, timedelta
 
 import databento as db
 import pandas as pd
+from databento import BentoClientError, BentoServerError
+
 
 def handler():
 
     client = db.Historical(os.getenv("DATABENTO_API_KEY"))
+
+    results = {}
     
     #Iterate for each symbol
     for symbol in os.listdir("./market_data"):
@@ -23,6 +27,7 @@ def handler():
         )
 
         if not os.path.exists(metadata_path):
+            results[symbol] = {"status": 404, "detail": "Missing metadata", "rows_added": 0}
             continue
 
         #Load metadata
@@ -30,6 +35,7 @@ def handler():
             metadata = json.load(file)
 
         #Extract metadata
+        symbol = metadata["symbol"]
         databento_symbol = metadata["databento_symbol"]
         dataset = metadata["dataset"]
         schema = metadata["schema"]
@@ -40,8 +46,8 @@ def handler():
             dataset_range = client.metadata.get_dataset_range(dataset)
             end = datetime.fromisoformat(dataset_range["end"])
             end = end.replace(microsecond=0, second=0) - timedelta(minutes=1)
-        except Exception as e:
-            print(e)
+        except (BentoClientError, BentoServerError) as e:
+            results[symbol] = {"status": e.http_status, "detail": e.message, "rows_added": 0}
             continue
 
         #Download data
@@ -54,16 +60,14 @@ def handler():
                 schema=schema,
                 stype_in="continuous"
             )
-        except Exception as e:
-            print(e)
+        except (BentoClientError, BentoServerError) as e:
+            results[symbol] = {"status": e.http_status, "detail": e.message, "rows_added": 0}
             continue
 
-        #Reframe new data
+        #Clean data
         new_df = data.to_df()
-
         if new_df.empty:
             continue
-
         new_df = new_df.reset_index()
         new_df = new_df.drop(columns=["rtype", "publisher_id", "instrument_id", "symbol"])
         new_df = new_df.rename(columns={"ts_event": "timestamp"})
@@ -85,8 +89,8 @@ def handler():
                 symbol_dir,
                 str(year)
             )
-            os.makedirs(year_dir, exist_ok=True)
 
+            os.makedirs(year_dir, exist_ok=True)
             file_path = os.path.join(year_dir, f"{year}-{month:02d}.parquet")
             monthly_df = monthly_df.drop(columns=["year", "month"])
 
@@ -112,3 +116,7 @@ def handler():
 
         with open(metadata_path, "w") as file:
             json.dump(metadata, file, indent=4)
+
+        results[symbol] = {"status": 200, "detail": "success", "rows_added": rows_added}
+
+    return results

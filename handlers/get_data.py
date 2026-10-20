@@ -5,30 +5,30 @@ from datetime import datetime
 import pandas as pd
 from fastapi import HTTPException
 
+
 def handler(symbol: str, start: str, end: str):
 
+    #Validate existing symbol
     symbol_dir = os.path.join(
         "market_data",
         symbol,
         "1m"
     )
-
     if not os.path.exists(symbol_dir):
         raise HTTPException(
             status_code=404,
-            detail=f"Symbol {symbol} not found request /get_metadata for available symbols"
+            detail=f"Symbol {symbol} not found request, try /get_metadata for available symbols"
         )
 
+    #Validate dates
     try:
         start_dt = datetime.fromisoformat(start)
         end_dt = datetime.fromisoformat(end)
-
     except ValueError:
         raise HTTPException(
             status_code=400,
             detail="Start and end dates must be ISO format tz-aware -> [ 2012-01-01T00:00:00+00:00 ]"
         )
-
     if start_dt >= end_dt:
         raise HTTPException(
             status_code=400,

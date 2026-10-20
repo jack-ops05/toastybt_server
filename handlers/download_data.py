@@ -97,6 +97,7 @@ def handler(server_symbol: str, dataset: str, start: str, end: str, databento_sy
         )
         with open(metadata_path, "w") as file:
             json.dump(metadata, file, indent=4)
+
     except Exception as e:
         df.to_parquet(f"failed_save_{server_symbol}", index=False)
         raise HTTPException(

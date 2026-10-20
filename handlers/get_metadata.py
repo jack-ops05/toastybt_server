@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def handler():
 
     full_metadata = {}
